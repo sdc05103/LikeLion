@@ -29,6 +29,8 @@ urlpatterns = [
     path('cbv/', class_view.as_view(), name = 'cbv'),    # class라서 .as_view() 필수
     path('', index, name='index'),
     path('posts/', include('posts.urls', namespace = 'posts')),
+
+    path('__debug__/', include('debug_toolbar.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,31 +1,58 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
-from django.views.generic.list import ListView
+from django.http import HttpResponse
+from django.views.generic import ListView
 
+from .forms import PostBaseForm
 from .models import Post
 # Create your views here.
 def index(request):
     return render(request, 'index.html')
 
 def post_list_view(request):
-    return render(request, 'posts/post_list.html')
+    # post_list = Post.objects.all()    # Post 전체 데이터 조회
+    post_list = Post.objects.filter(writer=request.user)    # Post.writer가 현재 로그인인 것 조회
+    context = {
+        'post_list': post_list,
+    }
+    return render(request, 'posts/post_list.html', context)
 
 def post_detail_view(request, id):
     return render(request, 'posts/post_detail.html')
 
+@login_required
 def post_create_view(request):
-    if request.method =='GET':
+    if request.method == 'GET':
         return render(request, 'posts/post_form.html')
     else:
         image = request.FILES.get('image')
-        content=request.POST.get('content')
-        print(image)
-        print(content)
+        content = request.POST.get('content')
+
         Post.objects.create(
             image=image,
             content=content,
-            # writer=request.user
+            writer=request.user,
         )
+
+        return redirect('index')
+
+
+@login_required
+def post_create_view(request):
+    if request.method == 'GET':
+        return render(request, 'posts/post_form.html', {'form': PostBaseForm()})
+    else:
+        form = PostBaseForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            Post.objects.create(
+                image=form.cleaned_data.get('image'),
+                content=form.cleaned_data.get('content'),
+                writer=request.user,
+            )
+        else:
+            return redirect('posts:post-create')
+
         return redirect('index')
 
 def post_update_view(request, id):
@@ -58,7 +85,7 @@ def function_view(request):
 class class_view(ListView):
     model = Post
     ordering = ['-id']
-    # template_name = 'cbv_view.html'
+    template_name = 'cbv_view.html'
 
 def function_list_view(request):
     object_list = Post.objects.all().order_by('-id')
